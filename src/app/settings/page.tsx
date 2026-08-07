@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { getSettings } from "@/lib/supabase/settings";
 import { SettingsForm } from "@/components/settings-form";
@@ -8,8 +9,15 @@ export default async function SettingsPage() {
   return (
     <>
       <AppHeader subtitle="Préférences" title="Réglages" />
-      <main className="px-5">
+      <main className="px-5 space-y-6">
         <SettingsForm settings={settings} />
+        <Link
+          href="/recurring"
+          className="block text-sm underline"
+          style={{ color: "var(--text-secondary)" }}
+        >
+          Gérer les dépenses récurrentes →
+        </Link>
       </main>
     </>
   );

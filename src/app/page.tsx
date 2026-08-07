@@ -3,7 +3,9 @@ import { AppHeader } from "@/components/app-header";
 import { getCurrentMonthExpenses } from "@/lib/supabase/expenses";
 import { getSettings } from "@/lib/supabase/settings";
 import { getCurrentMonthIncome } from "@/lib/supabase/incomes";
+import { getMissingRecurringForCurrentMonth } from "@/lib/supabase/recurring";
 import { IncomeForm } from "@/components/income-form";
+import { RecurringConfirmList } from "@/components/recurring-confirm";
 
 const MONTH_LABEL = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date());
 
@@ -15,6 +17,11 @@ export default async function HomePage() {
   ]);
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
   const isSolde = settings.mode === "solde";
+
+  // En solde : seulement si le revenu du mois est déjà saisi (règle métier).
+  // En cumul : toujours.
+  const canCheckRecurring = !isSolde || Boolean(income);
+  const missingRecurring = canCheckRecurring ? await getMissingRecurringForCurrentMonth() : [];
 
   return (
     <>
@@ -36,6 +43,8 @@ export default async function HomePage() {
             </p>
           </section>
         )}
+
+        <RecurringConfirmList items={missingRecurring} />
 
         <section>
           <h2

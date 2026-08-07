@@ -1,7 +1,5 @@
 // Types miroir des tables Supabase (schema_supabase.sql).
-// On ne type ici que les tables utilisées en Phase 1 ; les autres
-// (recurring_expenses, recurring_expense_amounts, budgets...) seront
-// ajoutées au fichier quand on les branchera.
+// Reste à typer : `budgets` (Phase 4).
 
 export type Category = {
   id: string;
@@ -37,6 +35,30 @@ export type Income = {
   year: number;
   created_at: string;
   updated_at: string;
+};
+
+export type RecurringExpense = {
+  id: string;
+  user_id: string;
+  category_id: string | null;
+  label: string;
+  frequency: "weekly" | "monthly" | "yearly";
+  day_of_month: number | null;
+  day_of_week: number | null;
+  start_date: string;
+  end_date: string | null;
+  active: boolean;
+  last_generated_date: string | null;
+  created_at: string;
+};
+
+export type RecurringExpenseAmount = {
+  id: string;
+  recurring_id: string;
+  amount: number;
+  currency: string;
+  valid_from: string;
+  created_at: string;
 };
 
 export type Settings = {
