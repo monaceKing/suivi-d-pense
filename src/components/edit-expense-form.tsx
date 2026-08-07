@@ -3,13 +3,20 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Category } from "@/lib/supabase/types";
-import { addExpense } from "@/lib/supabase/expenses";
+import type { ExpenseWithCategory } from "@/lib/supabase/expenses";
+import { updateExpense, deleteExpense } from "@/lib/supabase/expenses";
 
-export function ExpenseForm({ categories }: { categories: Category[] }) {
+export function EditExpenseForm({
+  expense,
+  categories,
+}: {
+  expense: ExpenseWithCategory;
+  categories: Category[];
+}) {
   const router = useRouter();
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [amount, setAmount] = useState(String(expense.amount));
+  const [description, setDescription] = useState(expense.description ?? "");
+  const [categoryId, setCategoryId] = useState<string | null>(expense.category_id);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,11 +25,26 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
     setSubmitting(true);
     setError(null);
     try {
-      await addExpense({ amount: Number(amount), categoryId, description });
+      await updateExpense(expense.id, { amount: Number(amount), categoryId, description });
       router.push("/");
-      router.refresh(); // force la page d'accueil (server component) à relire Supabase
-    } catch {
-      setError("Échec de l'ajout, réessaie.");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Échec de la modification, réessaie.");
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm("Supprimer cette dépense ?")) return;
+    setSubmitting(true);
+    try {
+      await deleteExpense(expense.id);
+      router.push("/");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Échec de la suppression, réessaie.");
       setSubmitting(false);
     }
   }
@@ -39,7 +61,6 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           onWheel={(e) => e.currentTarget.blur()}
-          placeholder="0"
           required
           className="tabular-figures mt-1 w-full rounded-(--radius-card) p-3 text-2xl outline-none"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
@@ -96,7 +117,17 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
         className="w-full rounded-(--radius-pill) py-3 font-medium disabled:opacity-50"
         style={{ background: "var(--accent-gold)", color: "var(--bg)" }}
       >
-        {submitting ? "Ajout..." : "Ajouter"}
+        {submitting ? "..." : "Enregistrer"}
+      </button>
+
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={submitting}
+        className="w-full rounded-(--radius-pill) py-3 font-medium disabled:opacity-50"
+        style={{ background: "transparent", color: "var(--accent-expense)", border: "1px solid var(--accent-expense)" }}
+      >
+        Supprimer
       </button>
     </form>
   );

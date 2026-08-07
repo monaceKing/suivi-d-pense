@@ -11,3 +11,12 @@ export async function getSettings(): Promise<Settings> {
   if (error) throw error;
   return data;
 }
+
+export async function updateSettings(changes: Partial<Pick<Settings, "mode" | "theme">>) {
+  const { error } = await supabase
+    .from("settings")
+    .update(changes)
+    .eq("user_id", PLACEHOLDER_USER_ID);
+
+  if (error) throw error;
+}

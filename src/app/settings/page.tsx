@@ -1,13 +1,15 @@
 import { AppHeader } from "@/components/app-header";
+import { getSettings } from "@/lib/supabase/settings";
+import { SettingsForm } from "@/components/settings-form";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const settings = await getSettings();
+
   return (
     <>
       <AppHeader subtitle="Préférences" title="Réglages" />
       <main className="px-5">
-        <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-          Mode solde/cumul, thème, devise — branché sur la table `settings` en Phase 1.
-        </p>
+        <SettingsForm settings={settings} />
       </main>
     </>
   );

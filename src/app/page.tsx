@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppHeader } from "@/components/app-header";
 import { getCurrentMonthExpenses } from "@/lib/supabase/expenses";
 import { getSettings } from "@/lib/supabase/settings";
@@ -51,18 +52,20 @@ export default async function HomePage() {
           ) : (
             <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
               {expenses.map((e) => (
-                <li key={e.id} className="flex items-center gap-3 py-3">
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
-                    style={{ background: e.category?.color ?? "var(--bg-elevated-2)" }}
-                  >
-                    {e.category?.icon ?? "•"}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate">{e.description || e.category?.name || "Sans catégorie"}</p>
-                    <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{e.expense_date}</p>
-                  </div>
-                  <p className="tabular-figures shrink-0">{e.amount.toLocaleString("fr-FR")}</p>
+                <li key={e.id}>
+                  <Link href={`/expenses/${e.id}`} className="flex items-center gap-3 py-3">
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
+                      style={{ background: e.category?.color ?? "var(--bg-elevated-2)" }}
+                    >
+                      {e.category?.icon ?? "•"}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate">{e.description || e.category?.name || "Sans catégorie"}</p>
+                      <p className="text-xs" style={{ color: "var(--text-secondary)" }}>{e.expense_date}</p>
+                    </div>
+                    <p className="tabular-figures shrink-0">{e.amount.toLocaleString("fr-FR")}</p>
+                  </Link>
                 </li>
               ))}
             </ul>

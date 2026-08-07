@@ -56,3 +56,42 @@ export async function addExpense(input: {
 
   if (error) throw error;
 }
+
+export async function getExpenseById(id: string): Promise<ExpenseWithCategory> {
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("*, category:categories(name, icon, color)")
+    .eq("id", id)
+    .eq("user_id", PLACEHOLDER_USER_ID)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateExpense(
+  id: string,
+  changes: { amount: number; categoryId: string | null; description: string }
+) {
+  const { error } = await supabase
+    .from("expenses")
+    .update({
+      amount: changes.amount,
+      category_id: changes.categoryId,
+      description: changes.description || null,
+    })
+    .eq("id", id)
+    .eq("user_id", PLACEHOLDER_USER_ID);
+
+  if (error) throw error;
+}
+
+export async function deleteExpense(id: string) {
+  const { error } = await supabase
+    .from("expenses")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", PLACEHOLDER_USER_ID);
+
+  if (error) throw error;
+}
