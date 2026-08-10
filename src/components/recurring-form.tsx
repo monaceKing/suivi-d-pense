@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import type { Category } from "@/lib/supabase/types";
 import { addRecurringExpense } from "@/lib/supabase/recurring";
 
-const WEEKDAYS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
-type Frequency = "weekly" | "monthly" | "yearly";
+const WEEKDAYS_SHORT = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+type Frequency = "weekly" | "monthly";
 
 export function RecurringForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
@@ -82,7 +82,7 @@ export function RecurringForm({ categories }: { categories: Category[] }) {
           className="mt-2 inline-flex rounded-(--radius-pill) p-1"
           style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
         >
-          {(["weekly", "monthly", "yearly"] as Frequency[]).map((f) => (
+          {(["weekly", "monthly"] as Frequency[]).map((f) => (
             <button
               key={f}
               type="button"
@@ -93,7 +93,7 @@ export function RecurringForm({ categories }: { categories: Category[] }) {
                 color: frequency === f ? "var(--bg)" : "var(--text-primary)",
               }}
             >
-              {f === "weekly" ? "Hebdo" : f === "monthly" ? "Mensuel" : "Annuel"}
+              {f === "weekly" ? "Hebdo" : "Mensuel"}
             </button>
           ))}
         </div>
@@ -104,18 +104,23 @@ export function RecurringForm({ categories }: { categories: Category[] }) {
           <label className="text-sm" style={{ color: "var(--text-secondary)" }}>
             Jour de la semaine
           </label>
-          <select
-            value={dayOfWeek}
-            onChange={(e) => setDayOfWeek(e.target.value)}
-            className="mt-1 w-full rounded-(--radius-card) p-3 outline-none"
-            style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
-          >
-            {WEEKDAYS.map((day, i) => (
-              <option key={day} value={i}>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {WEEKDAYS_SHORT.map((day, i) => (
+              <button
+                key={day}
+                type="button"
+                onClick={() => setDayOfWeek(String(i))}
+                className="rounded-(--radius-pill) px-4 py-2 text-sm cursor-pointer"
+                style={{
+                  background: dayOfWeek === String(i) ? "var(--accent-gold)" : "var(--bg-elevated)",
+                  color: dayOfWeek === String(i) ? "var(--bg)" : "var(--text-primary)",
+                  border: "1px solid var(--border)",
+                }}
+              >
                 {day}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       ) : (
         <div>
