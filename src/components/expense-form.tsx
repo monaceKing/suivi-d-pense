@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Category } from "@/lib/supabase/types";
-import { addExpense } from "@/lib/supabase/expenses";
+import { addExpenseOfflineFirst } from "@/lib/db/add-expense";
 
 export function ExpenseForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
@@ -18,11 +18,19 @@ export function ExpenseForm({ categories }: { categories: Category[] }) {
     setSubmitting(true);
     setError(null);
     try {
-      await addExpense({ amount: Number(amount), categoryId, description });
+      const { queued } = await addExpenseOfflineFirst({
+        amount: Number(amount),
+        categoryId,
+        description,
+        categories,
+      });
       router.push("/");
-      router.refresh(); // force la page d'accueil (server component) à relire Supabase
-    } catch {
-      setError("Échec de l'ajout, réessaie.");
+      if (queued) {
+        setTimeout(() => alert("Pas de réseau — la dépense partira automatiquement dès que possible."), 300);
+      }
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Échec de l'ajout, réessaie.");
       setSubmitting(false);
     }
   }

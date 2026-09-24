@@ -1,19 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { addIncome } from "@/lib/supabase/incomes";
 
 export function IncomeForm() {
-  const router = useRouter();
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    await addIncome(Number(amount));
-    router.refresh();
+    setError(null);
+    try {
+      await addIncome(Number(amount));
+      await pullAll();
+    } catch (err) {
+      console.error(err);
+      setError("Tu dois être en ligne pour saisir ton revenu.");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -39,6 +45,11 @@ export function IncomeForm() {
         className="tabular-figures w-full rounded-(--radius-card) p-3 outline-none"
         style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
       />
+      {error && (
+        <p className="text-sm" style={{ color: "var(--accent-expense)" }}>
+          {error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={submitting}
@@ -49,4 +60,7 @@ export function IncomeForm() {
       </button>
     </form>
   );
+}
+function pullAll() {
+  throw new Error("Function not implemented.");
 }

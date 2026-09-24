@@ -1,45 +1,49 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "@/components/theme-provider";
+import { useOfflineSync } from "@/components/offline-sync-provider";
 import { updateSettings } from "@/lib/supabase/settings";
 import { resetCurrentMonth } from "@/lib/supabase/reset";
+import { pullAll } from "@/lib/db/sync";
 import type { Settings } from "@/lib/supabase/types";
 
 export function SettingsForm({ settings }: { settings: Settings }) {
-  const router = useRouter();
   const { preference, setPreference } = useTheme();
+  const { isOnline } = useOfflineSync();
   const [resetting, setResetting] = useState(false);
 
   async function handleModeChange(mode: Settings["mode"]) {
+    if (!isOnline) {
+      alert("Tu dois être en ligne pour changer le mode.");
+      return;
+    }
     await updateSettings({ mode });
-    router.refresh(); // pour que l'accueil reflète le nouveau mode
+    await pullAll();
   }
 
   async function handleThemeChange(theme: Settings["theme"]) {
-    setPreference(theme); // applique tout de suite (localStorage)
-    await updateSettings({ theme }); // persiste en base
+    setPreference(theme); // marche même hors-ligne (localStorage)
+    if (!isOnline) return; // on synchronisera en base au retour du réseau
+    await updateSettings({ theme });
   }
 
   async function handleReset() {
-    if (
-      !confirm(
-        "Supprimer toutes les dépenses ET le revenu du mois en cours ? Irréversible.",
-      )
-    )
+    if (!isOnline) {
+      alert("Tu dois être en ligne pour réinitialiser le mois.");
       return;
-    if (!confirm("Vraiment sûr ? Cette action ne peut pas être annulée."))
-      return;
+    }
+    if (!confirm("Supprimer toutes les dépenses ET le revenu du mois en cours ? Irréversible.")) return;
+    if (!confirm("Vraiment sûr ? Cette action ne peut pas être annulée.")) return;
 
     setResetting(true);
     try {
       await resetCurrentMonth();
-      router.push("/");
-      router.refresh();
+      await pullAll();
     } catch (err) {
       console.error(err);
       alert("Échec de la réinitialisation, réessaie.");
+    } finally {
       setResetting(false);
     }
   }
@@ -79,9 +83,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
         <p className="text-sm mb-1" style={{ color: "var(--text-secondary)" }}>
           Devise
         </p>
-        <p>
-          {settings.default_currency} — multi-devises prévu plus tard (Phase 8)
-        </p>
+        <p>{settings.default_currency} — multi-devises prévu plus tard (Phase 8)</p>
       </div>
 
       <div className="ledger-rule pt-6">
@@ -93,11 +95,7 @@ export function SettingsForm({ settings }: { settings: Settings }) {
           onClick={handleReset}
           disabled={resetting}
           className="w-full rounded-(--radius-pill) py-3 font-medium disabled:opacity-50 cursor-pointer"
-          style={{
-            background: "transparent",
-            color: "var(--accent-expense)",
-            border: "1px solid var(--accent-expense)",
-          }}
+          style={{ background: "transparent", color: "var(--accent-expense)", border: "1px solid var(--accent-expense)" }}
         >
           {resetting ? "..." : "Réinitialiser le mois en cours"}
         </button>
@@ -118,10 +116,7 @@ function SegmentedControl<T extends string>({
   return (
     <div
       className="inline-flex rounded-(--radius-pill) p-1"
-      style={{
-        background: "var(--bg-elevated)",
-        border: "1px solid var(--border)",
-      }}
+      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
     >
       {options.map((opt) => (
         <button
@@ -130,8 +125,7 @@ function SegmentedControl<T extends string>({
           onClick={() => onChange(opt.value)}
           className="rounded-(--radius-pill) px-4 py-1.5 text-sm cursor-pointer"
           style={{
-            background:
-              value === opt.value ? "var(--accent-gold)" : "transparent",
+            background: value === opt.value ? "var(--accent-gold)" : "transparent",
             color: value === opt.value ? "var(--bg)" : "var(--text-primary)",
           }}
         >

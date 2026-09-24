@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Space_Grotesk, Work_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { OfflineSyncProvider } from "@/components/offline-sync-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { ServiceWorkerRegister } from "@/components/sw-register";
 
@@ -51,8 +52,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col" style={{ background: "var(--bg)" }}>
         <ThemeProvider>
-          <div className="flex-1 pb-24 mx-auto w-full max-w-md">{children}</div>
-          <BottomNav />
+          <OfflineSyncProvider>
+            <div className="flex-1 pb-24 mx-auto w-full max-w-md">{children}</div>
+            <BottomNav />
+          </OfflineSyncProvider>
         </ThemeProvider>
         <ServiceWorkerRegister />
       </body>

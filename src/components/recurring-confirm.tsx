@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { confirmRecurringOccurrence, type RecurringWithCurrentAmount } from "@/lib/supabase/recurring";
+import { useRouter } from "next/navigation";
 
 export function RecurringConfirmList({ items }: { items: RecurringWithCurrentAmount[] }) {
   if (items.length === 0) return null;
@@ -20,64 +20,63 @@ export function RecurringConfirmList({ items }: { items: RecurringWithCurrentAmo
 }
 
 function RecurringConfirmCard({ item }: { item: RecurringWithCurrentAmount }) {
-  const router = useRouter();
   const [amount, setAmount] = useState(String(item.currentAmount));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   async function handleConfirm() {
     setSubmitting(true);
     setError(null);
+
     try {
       await confirmRecurringOccurrence(item, Number(amount));
       router.refresh();
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : "Échec, réessaie.");
+      setError(
+        err instanceof Error ? err.message : "Tu dois être en ligne pour confirmer.",
+      );
+    } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <div
-      className="rounded-(--radius-card) p-4 space-y-3"
-      style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)" }}
-    >
-      <div className="flex items-center gap-3">
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg"
-          style={{ background: item.category?.color ?? "var(--bg-elevated-2)" }}
-        >
-          {item.category?.icon ?? "🔁"}
-        </span>
-        <span className="flex-1">{item.label}</span>
+    <div className="rounded-lg border p-3" style={{ borderColor: "var(--border)" }}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="font-medium">{item.label}</p>
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            {item.frequency ?? "Mensuel"}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            className="w-24 rounded border px-2 py-1 text-right"
+            style={{ borderColor: "var(--border)", color: "var(--text-primary)" }}
+            aria-label={`Montant pour ${item.label}`}
+          />
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={submitting}
+            className="rounded bg-primary px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {submitting ? "Confirmation..." : "Confirmer"}
+          </button>
+        </div>
       </div>
 
-      <input
-        type="number"
-        inputMode="decimal"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        onWheel={(e) => e.currentTarget.blur()}
-        className="tabular-figures w-full rounded-(--radius-card) p-3 outline-none"
-        style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
-      />
-
-      {error && (
-        <p className="text-sm" style={{ color: "var(--accent-expense)" }}>
+      {error ? (
+        <p className="mt-2 text-sm text-red-600" role="alert">
           {error}
         </p>
-      )}
-
-      <button
-        type="button"
-        onClick={handleConfirm}
-        disabled={submitting}
-        className="w-full rounded-(--radius-pill) py-2.5 font-medium disabled:opacity-50"
-        style={{ background: "var(--accent-gold)", color: "var(--bg)" }}
-      >
-        {submitting ? "..." : "Confirmer"}
-      </button>
+      ) : null}
     </div>
   );
 }

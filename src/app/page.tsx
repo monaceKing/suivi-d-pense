@@ -1,27 +1,45 @@
+"use client";
+
 import Link from "next/link";
+import { useLiveQuery } from "dexie-react-hooks";
 import { AppHeader } from "@/components/app-header";
-import { getCurrentMonthExpenses } from "@/lib/supabase/expenses";
-import { getSettings } from "@/lib/supabase/settings";
-import { getCurrentMonthIncome } from "@/lib/supabase/incomes";
-import { getMissingRecurringForCurrentMonth } from "@/lib/supabase/recurring";
+import { localDB } from "@/lib/db/local-db";
+import { computeMissingRecurring } from "@/lib/db/derive";
 import { IncomeForm } from "@/components/income-form";
 import { RecurringConfirmList } from "@/components/recurring-confirm";
 
 const MONTH_LABEL = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric" }).format(new Date());
 
-export default async function HomePage() {
-  const [expenses, settings, income] = await Promise.all([
-    getCurrentMonthExpenses(),
-    getSettings(),
-    getCurrentMonthIncome(),
-  ]);
+export default function HomePage() {
+  // useLiveQuery relit la base locale (IndexedDB) et se met à jour tout
+  // seul dès qu'elle change — pas besoin de refetch manuel.
+  const expenses = useLiveQuery(() => localDB.expenses.toArray(), [], []);
+  const settingsRow = useLiveQuery(() => localDB.settings.get("current"), [], undefined);
+  const incomeRow = useLiveQuery(() => localDB.income.get("current"), [], undefined);
+  const recurring = useLiveQuery(() => localDB.recurring.toArray(), [], []);
+
+  // Tant que le cache local n'a jamais été rempli (tout premier lancement,
+  // hors-ligne, avant toute synchro), on n'a rien à afficher de fiable.
+  if (!settingsRow) {
+    return (
+      <>
+        <AppHeader subtitle={capitalize(MONTH_LABEL)} title="Ce mois-ci" />
+        <main className="px-5">
+          <p className="py-8 text-center text-sm" style={{ color: "var(--text-secondary)" }}>
+            Chargement...
+          </p>
+        </main>
+      </>
+    );
+  }
+
+  const settings = settingsRow.value;
+  const income = incomeRow?.value ?? null;
   const total = expenses.reduce((sum, e) => sum + e.amount, 0);
   const isSolde = settings.mode === "solde";
 
-  // En solde : seulement si le revenu du mois est déjà saisi (règle métier).
-  // En cumul : toujours.
   const canCheckRecurring = !isSolde || Boolean(income);
-  const missingRecurring = canCheckRecurring ? await getMissingRecurringForCurrentMonth() : [];
+  const missingRecurring = canCheckRecurring ? computeMissingRecurring(recurring, expenses) : [];
 
   return (
     <>
